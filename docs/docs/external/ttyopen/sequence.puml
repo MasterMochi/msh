@@ -1,0 +1,13 @@
+@startuml
+
+participant mvfs
+participant msh
+
+activate msh
+
+mvfs <<- msh: ターミナルファイルopen( "/ttyS1" )
+activate mvfs
+mvfs ->> msh:
+deactivate mvfs
+
+@enduml

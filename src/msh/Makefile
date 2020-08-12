@@ -1,7 +1,9 @@
 #******************************************************************************#
-# Makefile                                                                     #
-#                                                                   2018/09/07 #
-# Copyright (C) 2018 Mochi.                                                    #
+#*                                                                            *#
+#* src/msh/Makefile                                                           *#
+#*                                                                 2020/05/18 *#
+#* Copyright (C) 2020 Mochi.                                                  *#
+#*                                                                            *#
 #******************************************************************************#
 #******************************************************************************#
 #* 定義                                                                       *#
@@ -10,31 +12,42 @@
 PROG = msh
 
 # ソースコード
-SRCS = main.c
+SRCS  = main.c
 
-# ソースコードディレクトリ
-SRC_DIR = src
-
-# オブジェクトファイル生成先
-OBJ_DIR = obj
+# ビルドディレクトリ
+BUILD_DIR   = ../../build
+# リリースディレクトリ
+RELEASE_DIR = $(BUILD_DIR)/release
+# オブジェクトファイル生成先ディレクトリ
+OBJ_DIR     = $(BUILD_DIR)/obj/$(PROG)
 
 # Cフラグ
-CFLAGS = -I../../kernel/src/include \
-         -ffreestanding             \
-         -nostdlib                  \
-         -m32                       \
-         -fno-pic                   \
-         -static                    \
-         -masm=intel
+CFLAGS  = -ffreestanding
+CFLAGS += -nostdlib
+CFLAGS += -m32
+CFLAGS += -fno-pic
+CFLAGS += -static
+CFLAGS += -masm=intel
+CFLAGS += -I../include
+CFLAGS += -I$(BUILD_DIR)/include
+ifdef BASE_CFLAGS
+CFLAGS += $(BASE_CFLAGS)
+endif
 
 # LDフラグ
-LDFLAGS = -Tmsh.lds                           \
-          -melf_i386                          \
-          -L../../kernel/build/objs/libraries
+LDFLAGS  = -Tmsh.lds
+LDFLAGS += -melf_i386
+LDFLAGS += -L$(BUILD_DIR)/lib
+ifdef BASE_LDFLAGS
+LDFLAGS += $(BASE_LDFLAGS)
+endif
 
 # ライブラリ
-LIBS = -lc  \
-       -lMk
+LIBS  = -lmvfs
+LIBS += -lMLib
+LIBS += -lc
+LIBS += -lMLib
+LIBS += -lmk
 
 
 #******************************************************************************#
@@ -54,27 +67,33 @@ DEPS = $(addprefix $(OBJ_DIR)/, $(SRCS:.c=.d))
 #* phonyターゲット                                                            *#
 #******************************************************************************#
 .PHONY: all
-all: $(OBJ_SUBDIRS) $(OBJS) $(OBJ_DIR)/$(PROG) Makefile
+all: $(OBJ_SUBDIRS) $(OBJS) $(RELEASE_DIR)/$(PROG) Makefile
 
 .PHONY: clean
 clean:
+	-rm -rf $(RELEASE_DIR)/$(PROG)
 	-rm -rf $(OBJ_DIR)
 
 
 #******************************************************************************#
 #* 生成規則                                                                   *#
 #******************************************************************************#
+# 依存関係ファイル
 -include $(DEPS)
 
+# オブジェクトサブディレクトリ生成
 ifdef OBJ_SUBDIRS
 $(OBJ_SUBDIRS):
 	mkdir -p $@
 endif
 
-$(OBJ_DIR)/$(PROG): $(OBJS) Makefile
-	$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+# 実行ファイル生成
+$(RELEASE_DIR)/$(PROG): $(OBJS) Makefile
+	$(LD) $(LDFLAGS) -o $(OBJ_DIR)/$(PROG) $(OBJS) $(LIBS)
+	ln -sfr $(OBJ_DIR)/$(PROG) $@
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c Makefile
+# コンパイル
+$(OBJ_DIR)/%.o: %.c Makefile
 	$(CC) $(CFLAGS) -o $@ -c $< -MD -MP
 
 

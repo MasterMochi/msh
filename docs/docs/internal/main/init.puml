@@ -1,0 +1,49 @@
+@startuml
+
+participant "MochiKernel"             as kernel
+participant "MochiKernel\nライブラリ" as libmk
+box "msh"
+    participant "メイン" as main
+end box
+participant "mvfs\nライブラリ" as libmvfs
+
+activate kernel
+kernel ->> main: 起動
+deactivate kernel
+activate main
+
+main -> libmvfs: ターミナルファイルopen( "/ttyS1" )
+activate libmvfs
+note left
+    [メモ]
+    本来は起動時に既にopen済み。
+    現状openされないので、
+    ここで仮実装する。
+end note
+main <-- libmvfs:
+deactivate libmvfs
+
+main -> libmvfs: プロンプト出力
+activate libmvfs
+note left
+    [メモ]
+    まだプロンプト出力しか
+    できないのでモジュール化しない
+end note
+main <-- libmvfs:
+deactivate libmvfs
+
+loop
+    libmk <- main: スリープ( 10,000,000us )
+    activate libmk
+    note right
+        [メモ]
+        カーネルにexit機能無いため、
+        無限ループ
+    end note
+    ...
+    libmk --> main:
+    deactivate libmk
+end loop
+
+@enduml
