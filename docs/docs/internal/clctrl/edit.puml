@@ -1,0 +1,25 @@
+@startuml
+
+box "msh"
+    participant "コマンドライン\n制御" as clctrl
+    participant "ターミナル\n管理"     as termmng
+end box
+participant "MLib" as mlib
+
+activate clctrl
+ref over clctrl: コマンド入力
+
+clctrl -> mlib: 状態遷移実行()
+activate mlib
+rnote over clctrl, mlib #FFFFFF
+    文字挿入
+    1文字前消去
+    1文字消去
+    CUF
+    CUB
+    コマンドライン編集終了
+end note
+clctrl <-- mlib:
+deactivate mlib
+
+@enduml

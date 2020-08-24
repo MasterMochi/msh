@@ -1,0 +1,46 @@
+@startuml
+
+participant mvfs
+participant msh
+
+activate msh
+
+loop
+    mvfs <<- msh: ターミナルファイル書込み
+    activate mvfs
+    rnote right: プロンプト出力
+    mvfs ->> msh:
+    deactivate mvfs
+
+    mvfs <<- msh: 入力待ち合わせ
+    activate mvfs
+    ...
+    mvfs ->> msh:
+    deactivate mvfs
+
+    opt ターミナルファイル読込み可能
+        mvfs <<- msh: ターミナルファイル読込み
+        activate mvfs
+        mvfs ->> msh:
+        deactivate mvfs
+
+        msh -> msh: コマンドライン編集
+
+        opt コマンドライン出力
+            mvfs <<- msh: ターミナルファイル書込み
+            activate mvfs
+            rnote right: コマンドライン出力
+            mvfs ->> msh:
+            deactivate mvfs
+        end opt
+
+        opt コマンド実行
+            ||5||
+            ref over msh: コマンド実行機能
+        end opt
+    end opt
+end loop
+
+
+@enduml
+

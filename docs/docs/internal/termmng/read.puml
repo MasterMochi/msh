@@ -1,0 +1,32 @@
+@startuml
+
+box "msh"
+    participant "コマンドライン\n制御" as clctrl
+    participant "ターミナル\n管理"     as termmng
+end box
+participant "mvfs\nライブラリ" as libmvfs
+
+activate clctrl
+clctrl -> termmng: 読込み
+activate termmng
+
+loop
+    termmng -> termmng: 読込み監視FDリスト作成
+    termmng -> libmvfs: 読込み可能待ち合わせ
+    activate libmvfs
+    ...
+    termmng <-- libmvfs:
+    deactivate libmvfs
+
+    break ターミナルファイル読込み可能
+        termmng -> libmvfs: ターミナルファイルread
+        activate libmvfs
+        termmng <-- libmvfs:
+        deactivate libmvfs
+    end break
+end loop
+
+clctrl <-- termmng:
+deactivate termmng
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+
+box "msh"
+    participant "メイン"               as main
+    participant "コマンドライン\n制御" as clctrl
+    participant "ターミナル\n管理"     as termmng
+end box
+
+activate main
+ref over main: 制御開始
+
+main -> clctrl: コマンドライン入力
+activate clctrl
+
+clctrl -> termmng: 書込み
+activate termmng
+rnote left #FFFFFF: プロンプト出力
+ref over termmng: 書込み
+clctrl <-- termmng:
+deactivate termmng
+
+clctrl -> clctrl: コマンドライン初期化
+
+loop
+    clctrl -> termmng: 読込み
+    activate termmng
+    ref over termmng: 読込み
+    clctrl <-- termmng:
+    deactivate termmng
+
+    ref over clctrl: コマンドライン編集
+
+    break コマンドライン編集終了
+        main <-- clctrl:コマンド
+    end break
+end loop
+deactivate clctrl
+
+@enduml

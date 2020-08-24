@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><!-- IE互換モード回避 -->
+        <meta name="author" content="Mochi">
+        <meta name="viewport" content="width=device-width,initial-scale=1"><!-- レスポンシブデザイン -->
+        <meta name="description" content="mshは、MochiKernel上で動作するシェルです。">
+        <meta name="format-detection" content="email=no,telephone=no,address=no">
+        <meta property="og:url" content="https://MasterMochi.github.io/msh/">
+        <meta property="og:title" content="msh">
+        <meta property="og:type" content="website">
+        <meta property="og:description" content="mshは、MochiKernel上で動作するシェルです。">
+        <!-- <meta property="og:image" content=""> -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@master_mochi">
+        <!-- <meta name="msapplication-TileImage" content="" --><!-- MSWIN8～ピン留め対応 -->
+        <meta name="msapplication-TitleColor" content="#424242"><!-- MSWIN8～ピン留め対応 -->
+        <link rel="stylesheet" href="../../../style.css">
+        <link rel="canonical" href="https://MasterMochi.github.io/msh/">
+        <link href="https://fonts.googleapis.com/css?family=Cutive+Mono" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho" rel="stylesheet">
+        <link href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" rel="stylesheet" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+        <title>msh - 外部仕様 - コマンド入力機能</title>
+    </head>
+    <body>
+        <a name="top"></a>
+        <div id="header">
+            <div id="menu">
+                <a href="../../../index.html"><div id="logo">msh</div></a>
+                <a href="../../index.html"><div>Docs</div></a>
+            </div>
+        </div>
+        <div id="crumb">
+            <ol itemscope itemtype="http://schema.org/BreadcrumbList">
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../../index.html"><span itemprop="name">Home</span></a>
+                    <meta itemprop="position" content="1">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../index.html"><span itemprop="name">Docs</span></a>
+                    <meta itemprop="position" content="2">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../index.html#external"><span itemprop="name">外部仕様</span></a>
+                    <meta itemprop="position" content="3">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="./index.html"><span itemprop="name">コマンド入力機能</span></a>
+                    <meta itemprop="position" content="4">
+                </li>
+            </ol>
+        </div>
+        <div id="content">
+            <div>
+                <h1>コマンド入力機能</h1>
+                <p>プロンプトを出力してユーザからのコマンド入力を促し、改行コードを入力するまでコマンドライン編集を可能にする。シーケンスを以下に示す。</p>
+                <br>
+                <div class="center">
+                    シーケンス<br>
+                    <img src="sequence.png">
+                </div>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1>プロンプト出力</h1>
+                <p>プロンプト「<span style="background:#000000"><b><font color="#55FF55">[msh]</font>$</b> </span>」をターミナルファイルに出力する。出力は、mvfsライブラリのLibMvfsWrite()を用いる。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">LibMvfsWrite()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">fd</td>
+                        <td class="center">(ターミナルファイルのFD)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">*pBuffer</td>
+                        <td class="center">"\e[1m\e[92m[msh]\e[97m$\e[0m "</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">bufferSize</td>
+                        <td class="center">25</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">*pWriteSize</td>
+                        <td class="center">(書込みサイズ格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">5</td>
+                        <td class="center">*pErrNo</td>
+                        <td class="center">NULL</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1>入力待ち合わせ</h1>
+                <p>ターミナルファイルからの入力を待ち合わせる。待ち合わせはmvfsライブラリのLibMvfsSelect()を用いる。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">LibMvfsSelect()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">*pReadFds</td>
+                        <td class="center">(ターミナルファイルのFDが登録されたFDリスト)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">*pWriteFds</td>
+                        <td class="center">NULL</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">timeout</td>
+                        <td class="center">0</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">*pErr</td>
+                        <td class="center">(エラー要因格納先ポインタ)</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1>ターミナルファイル読込み</h1>
+                <p>ターミナルファイル読込み可能である場合は、ターミナルファイルを読み込む。読込みはmvfsライブラリのLibMvfsRead()を用いる。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">LibMvfsRead()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">fd</td>
+                        <td class="center">(ターミナルファイルのFD)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">*pBuffer</td>
+                        <td class="center">(データ格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">bufferSize</td>
+                        <td class="center">1</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">*pReadSize</td>
+                        <td clasS="center">(読込みサイズ格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">5</td>
+                        <td class="center">*pErrNo</td>
+                        <td class="center">(エラー要因格納先ポインタ)</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1>コマンドライン編集</h1>
+                <p>文字の削除やカーソルの移動などを処理してコマンドラインを編集する。ターミナルファイルから入力したコードに対応する編集処理とターミナルファイル出力の一覧を以下に示す。</p>
+                <br>
+                <div class="center">コマンドライン編集コード一覧</div>
+                <table>
+                    <tr>
+                        <td class="title">コード</td>
+                        <td class="title">概要</td>
+                        <td class="title" width="300px">処理</td>
+                        <td class="title">出力</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\b</td>
+                        <td class="center">Backspace</td>
+                        <td>カーソル位置1つ前の文字を削除する。続く文字があれば前に詰める。</td>
+                        <td>(編集処理内容による)</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\r</td>
+                        <td class="center">Carriage<br>Return</td>
+                        <td>コマンドライン編集を終了し、コマンドを実行する。</td>
+                        <td>\r\n</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\x7F</td>
+                        <td class="center">Delete</td>
+                        <td>カーソル位置の文字を削除する。続く文字があれば前に詰める。</td>
+                        <td>(編集処理内容による)</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\e[C</td>
+                        <td class="center">→</td>
+                        <td>カーソル位置を1つ右に移動する。カーソル位置が文字列最後尾の場合は無視する。</td>
+                        <td>\e[C または、出力無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\e[D</td>
+                        <td class="center">←</td>
+                        <td>カーソル位置を1つ左に移動する。カーソル位置が文字列先頭の場合は無視する。</td>
+                        <td>\e[D または、出力無し</td>
+                    </tr>
+                </table>
+                <br>
+                <p>ターミナルファイルへの出力はmvfsライブラリのLibMvfsWrite()を用いる。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">LibMvfsWrite()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">fd</td>
+                        <td class="center">(ターミナルファイルのFD)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">*pBuffer</td>
+                        <td class="center">(出力データ格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">bufferSize</td>
+                        <td class="center">(出力データサイズ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">*pWriteSize</td>
+                        <td class="center">(書込みサイズ格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">5</td>
+                        <td class="center">*pErrNo</td>
+                        <td class="center">NULL</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+        </div>
+        <div id="footer">
+            <div id="copyright">
+                Copyright &copy 2020 Mochi. All rights reserved.
+            </div>
+        </div>
+    </body>
+</html>

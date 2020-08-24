@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
 /* src/msh/main.c                                                             */
-/*                                                                 2020/08/12 */
+/*                                                                 2020/08/24 */
 /* Copyright (C) 2020 Mochi.                                                  */
 /*                                                                            */
 /******************************************************************************/
@@ -13,8 +13,25 @@
 #include <string.h>
 
 /* ライブラリヘッダ */
-#include <libmvfs.h>
 #include <libmk.h>
+
+/* モジュール内ヘッダ */
+#include "Clctrl.h"
+#include "Termmng.h"
+
+
+/******************************************************************************/
+/* 定義                                                                       */
+/******************************************************************************/
+/** コマンドラインバッファサイズ */
+#define CMD_BUFFER_SIZE ( 1048 )
+
+
+/******************************************************************************/
+/* 静的グローバル変数定義                                                     */
+/******************************************************************************/
+/** コマンドラインバッファ */
+static char gCmd[ CMD_BUFFER_SIZE ];
 
 
 /******************************************************************************/
@@ -22,38 +39,33 @@
 /******************************************************************************/
 void main( void )
 {
-    char         *pPrompt;      /* プロンプト文字列   */
-    size_t       promptSize;    /* プロンプト文字列長 */
-    size_t       writeSize;     /* 書込みサイズ       */
-    uint32_t     fd;            /* ターミナルFD       */
-    LibMvfsErr_t errLibMvfs;    /* libmvfsエラー要因  */
-    LibMvfsRet_t retLibMvfs;    /* libmvfs戻り値      */
+    bool ret;   /* コマンド入力結果 */
 
     /* 初期化 */
-    pPrompt    = "\e[1m\e[92m[msh]\e[97m$\e[0m ";
-    promptSize = strlen( pPrompt );
-    writeSize  = 0;
-    fd         = 0;
-    errLibMvfs = LIBMVFS_ERR_NONE;
-    retLibMvfs = LIBMVFS_RET_FAILURE;
+    ret = false;
 
-    /* TODO: 起動待ち合わせ */
+    /* [TODO] 起動待ち合わせ */
     LibMkTimerSleep( 10000000, NULL );
 
-    /* ターミナルファイルオープン */
-    retLibMvfs = LibMvfsOpen( &fd, "/ttyS1", &errLibMvfs );
+    /* ターミナル管理初期化 */
+    TermmngInit();
 
-    /* オープン結果判定 */
-    if ( retLibMvfs == LIBMVFS_RET_SUCCESS ) {
-        /* 成功 */
-
-        /* プロンプト出力 */
-        LibMvfsWrite( fd, pPrompt, promptSize, &writeSize, NULL );
-    }
+    /* コマンドライン制御初期化 */
+    ClctrlInit();
 
     /* 無限ループ */
     while ( true ) {
-        LibMkTimerSleep( 10000000, NULL );
+        /* コマンド入力 */
+        ret = ClctrlInput( gCmd, CMD_BUFFER_SIZE );
+
+        /* コマンド入力結果判定 */
+        if ( ret != false ) {
+            /* 成功 */
+
+            /* [TEST] コマンド出力 */
+            TermmngWrite( gCmd, strlen( gCmd ) );
+            TermmngWrite( "\r\n", 2 );
+        }
     }
 }
 

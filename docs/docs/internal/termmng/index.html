@@ -21,7 +21,7 @@
         <link href="https://fonts.googleapis.com/css?family=Cutive+Mono" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho" rel="stylesheet">
         <link href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" rel="stylesheet" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-        <title>msh - 内部仕様 - メインモジュール</title>
+        <title>msh - 内部仕様 - ターミナル管理モジュール</title>
     </head>
     <body>
         <a name="top"></a>
@@ -46,27 +46,29 @@
                     <meta itemprop="position" content="3">
                 </li>
                 <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
-                    <a itemprop="item" href="./index.html"><span itemprop="name">メインモジュール</span></a>
+                    <a itemprop="item" href="./index.html"><span itemprop="name">ターミナル管理モジュール</span></a>
                     <meta itemprop="position" content="4">
                 </li>
             </ol>
         </div>
         <div id="content">
             <div>
-                <h1>メインモジュール</h1>
-                <p>メインモジュールは以下の機能を持つ。</p>
+                <h1>ターミナル管理モジュール</h1>
+                <p>ターミナル管理モジュールは以下の機能を持つ。</p>
                 <ol>
                     <li><a href="#init">初期化</a><ol>
-                        <li><a href="#init-init">各モジュール初期化</a></li>
-                        <li><a href="#init-start">制御開始</a></li></ol></li>
-                    <li><a href="#loop">メインループ</a><ol>
-                        <li><a href="#loop-cmd">コマンド入力</a></li></ol></li>
+                        <li><a href="#init-open">ターミナルファイルopen</a></li></ol></li>
+                    <li><a href="#read">読込み</a><ol>
+                        <li><a href="#read-wait">読込み可能待ち合わせ</a></li>
+                        <li><a href="#read-read">ターミナルファイルread</a></li></ol></li>
+                    <li><a href="#write">書込み</a><ol>
+                        <li><a href="#write-write">ターミナルファイルwrite</a></li></ol></li>
                 </ol>
             </div>
             <div class="totop"><a href="#top">▲上へ</a></div>
             <div>
                 <h1><a name="init">初期化</a></h1>
-                <p>msh起動時に各モジュールを初期化する。シーケンスを以下に示す。</p>
+                <p>msh起動時にターミナルファイルのopenを行う。シーケンスを以下に示す。</p>
                 <br>
                 <div class="center">
                     シーケンス<br>
@@ -74,43 +76,43 @@
                 </div>
                 <br>
                 <br>
-                <h2><a name="init-init">各モジュール初期化</a></h2>
-                <p>各モジュールを以下の順で初期化する。</p>
-                <br>
-                <div class="center">初期化</div>
-                <table>
-                    <tr>
-                        <td class="title">#</td>
-                        <td class="title">モジュール</td>
-                    </tr>
-                    <tr>
-                        <td class="title">1</td>
-                        <td class="center">ターミナル管理</td>
-                    </tr>
-                    <tr>
-                        <td class="title">2</td>
-                        <td class="center">コマンドライン制御</td>
-                    </tr>
-                </table>
-                <br>
-                <br>
-                <h2><a name="init-start">制御開始</a></h2>
-                <p>制御を開始する。詳細は<a href="#loop">メインループ</a>を参照のこと。</p>
+                <h2><a name="init-open">ターミナルファイルopen</a></h2>
+                <p>詳細は、<a href="../../external/ttyopen/index.html">外部仕様(ターミナルファイルopen機能)</a>を参照のこと。</p>
                 <br>
             </div>
             <div class="totop"><a href="#top">▲上へ</a></div>
             <div>
-                <h1><a name="loop">メインループ</a></h1>
-                <p>コマンド入力を受け付る。シーケンスを以下に示す。</p>
+                <h1><a name="read">読込み</a></h1>
+                <p>ターミナルファイルが読込み可能になるまで待ち合わせてから読み込みを行う。シーケンスを以下に示す。</p>
                 <br>
                 <div class="center">
                     シーケンス<br>
-                    <img src="loop.png">
+                    <img src="read.png">
                 </div>
                 <br>
                 <br>
-                <h2><a name="loop-cmd">コマンド入力</a></h2>
-                <p>コマンドライン制御モジュールの機能を用いてコマンドの入力を受け付ける。詳細は、<a href="../clctrl/index.html">内部仕様(コマンドライン制御)</a>のコマンド入力を参照のこと。</p>
+                <h2><a name="read-wait">読込み可能待ち合わせ</a></h2>
+                <p>詳細は、<a href="../../external/input/index.html">外部仕様(コマンド入力機能)</a>の入力待ち合わせを参照のこと。</p>
+                <br>
+                <br>
+                <h2><a name="read-read">ターミナルファイルread</a></h2>
+                <p>詳細は、<a href="../../external/input/index.html">外部仕様(コマンド入力機能)</a>のターミナルファイル読込みを参照のこと。</p>
+                <br>
+                <br>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1><a name="write">書込み</a></h1>
+                <p>ターミナルファイルへの書込みを行う。シーケンスを以下に示す。</p>
+                <br>
+                <div class="center">
+                    シーケンス<br>
+                    <img src="write.png">
+                </div>
+                <br>
+                <br>
+                <h2><a name="write-write">ターミナルファイルwrite</a></h2>
+                <p>詳細は、<a href="../../external/input/index.html">外部仕様(コマンド入力機能)</a>のコマンドライン編集を参照のこと。</p>
                 <br>
             </div>
             <div class="totop"><a href="#top">▲上へ</a></div>

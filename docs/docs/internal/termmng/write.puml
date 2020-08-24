@@ -1,0 +1,22 @@
+@startuml
+
+box "msh"
+    participant "コマンドライン\n制御" as clctrl
+    participant "ターミナル\n管理"     as termmng
+end box
+participant "mvfs\nライブラリ" as libmvfs
+
+activate clctrl
+
+clctrl -> termmng: 書込み
+activate termmng
+
+termmng -> libmvfs: ターミナルファイルwrite
+activate libmvfs
+termmng <-- libmvfs:
+deactivate libmvfs
+
+clctrl <-- termmng:
+deactivate termmng
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml
+
+box "msh"
+    participant "メイン"               as main
+    participant "コマンドライン\n制御" as clctrl
+end box
+participant "MLib" as mlib
+
+activate main
+ref over main: 初期化
+
+main -> clctrl: 初期化
+activate clctrl
+
+clctrl -> mlib: 状態遷移初期化
+activate mlib
+clctrl <-- mlib:
+deactivate mlib
+
+main <-- clctrl:
+deactivate clctrl
+
+@enduml

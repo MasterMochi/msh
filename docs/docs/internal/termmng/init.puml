@@ -1,0 +1,23 @@
+@startuml
+
+box "msh"
+    participant "メイン"           as main
+    participant "ターミナル\n管理" as termmng
+end box
+participant "mvfs\nライブラリ" as libmvfs
+
+activate main
+ref over main: 初期化
+
+main -> termmng: 初期化
+activate termmng
+
+termmng -> libmvfs: ターミナルファイルopen( "/ttyS1" )
+activate libmvfs
+termmng <-- libmvfs:
+deactivate libmvfs
+
+main <-- termmng:
+deactivate termmng
+
+@enduml

@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ja">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"><!-- IE互換モード回避 -->
+        <meta name="author" content="Mochi">
+        <meta name="viewport" content="width=device-width,initial-scale=1"><!-- レスポンシブデザイン -->
+        <meta name="description" content="mshは、MochiKernel上で動作するシェルです。">
+        <meta name="format-detection" content="email=no,telephone=no,address=no">
+        <meta property="og:url" content="https://MasterMochi.github.io/msh/">
+        <meta property="og:title" content="msh">
+        <meta property="og:type" content="website">
+        <meta property="og:description" content="mshは、MochiKernel上で動作するシェルです。">
+        <!-- <meta property="og:image" content=""> -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:site" content="@master_mochi">
+        <!-- <meta name="msapplication-TileImage" content="" --><!-- MSWIN8～ピン留め対応 -->
+        <meta name="msapplication-TitleColor" content="#424242"><!-- MSWIN8～ピン留め対応 -->
+        <link rel="stylesheet" href="../../../style.css">
+        <link rel="canonical" href="https://MasterMochi.github.io/msh/">
+        <link href="https://fonts.googleapis.com/css?family=Cutive+Mono" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Sawarabi+Mincho" rel="stylesheet">
+        <link href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" rel="stylesheet" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+        <title>msh - 内部仕様 - コマンドライン制御モジュール</title>
+    </head>
+    <body>
+        <a name="top"></a>
+        <div id="header">
+            <div id="menu">
+                <a href="../../../index.html"><div id="logo">msh</div></a>
+                <a href="../../index.html"><div>Docs</div></a>
+            </div>
+        </div>
+        <div id="crumb">
+            <ol itemscope itemtype="http://schema.org/BreadcrumbList">
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../../index.html"><span itemprop="name">Home</span></a>
+                    <meta itemprop="position" content="1">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../index.html"><span itemprop="name">Docs</span></a>
+                    <meta itemprop="position" content="2">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="../../index.html#internal"><span itemprop="name">内部仕様</span></a>
+                    <meta itemprop="position" content="3">
+                </li>
+                <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+                    <a itemprop="item" href="./index.html"><span itemprop="name">コマンドライン制御モジュール</span></a>
+                    <meta itemprop="position" content="4">
+                </li>
+            </ol>
+        </div>
+        <div id="content">
+            <div>
+                <h1>コマンドライン制御モジュール</h1>
+                <p>コマンドライン制御モジュールは以下の機能を持つ。</p>
+                <ol>
+                    <li><a href="#init">初期化</a><ol>
+                        <li><a href="#init-state">状態遷移初期化</a></li></ol></li>
+                    <li><a href="#input">コマンド入力</a><ol>
+                        <li><a href="#input-prompt">プロンプト出力</a></li>
+                        <li><a href="#input-init">コマンドライン初期化</a></li>
+                        <li><a href="#input-read">読込み</a></li>
+                        <li><a href="#input-edit">コマンドライン編集</a></li></ol></li>
+                    <li><a href="#edit">コマンドライン編集</a><ol>
+                        <li><a href="#edit-exec">状態遷移実行</a></li>
+                        <li><a href="#edit-insert">文字挿入</a></li>
+                        <li><a href="#edit-backspace">1文字前消去</a></li>
+                        <li><a href="#edit-delete">1文字消去</a></li>
+                        <li><a href="#edit-cuf">CUF</a></li>
+                        <li><a href="#edit-cub">CUB</a></li>
+                        <li><a href="#edit-end">コマンドライン編集終了</a></li></ol></li>
+                </ol>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1><a name="init">初期化</a></h1>
+                <p>コマンドライン編集における状態遷移を初期化する。シーケンスを以下に示す。</p>
+                <br>
+                <div class="center">
+                    シーケンス<br>
+                    <img src="init.png">
+                </div>
+                <br>
+                <br>
+                <h2><a name="init-state">状態遷移初期化</a></h2>
+                <p>コマンドライン編集にて使用する状態遷移を初期化する。初期化は、MLibライブラリのMLibStateInit()を用いて状態遷移の初期化を行う。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">MLibStateInit()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                        <td clasS="title">備考</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">*pHandle</td>
+                        <td class="center">(状態遷移ハンドルポインタ)</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">*pTable</td>
+                        <td class="center">(状態遷移表ポインタ)</td>
+                        <td>状態遷移表は下記を参照</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">tableSize</td>
+                        <td class="center">(状態遷移表サイズ)</td>
+                        <td>sizeofを用いて求める</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">state</td>
+                        <td class="center">(初期状態)</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="title">5</td>
+                        <td class="center">*pErr</td>
+                        <td class="center">(エラー要因格納先ポインタ)</td>
+                        <td></td>
+                    </tr>
+                </table>
+                <br>
+                <div class="center">
+                    コマンドライン入力状態遷移図<br>
+                    <img src="state.png">
+                </div>
+                <br>
+                <div class="center">コマンドライン入力状態遷移表</div>
+                <table>
+                    <tr>
+                        <td class="title">＼</td>
+                        <td class="title">状態</td>
+                        <td class="title">初期状態</td>
+                        <td class="title">エスケープ</td>
+                        <td class="title">CSI</td>
+                    </tr>
+                    <tr>
+                        <td class="title">イベント</td>
+                        <td class="title">#</td>
+                        <td class="title">S1</td>
+                        <td class="title">S2</td>
+                        <td class="title">S3</td>
+                    </tr>
+                    <tr>
+                        <td class="title">\b</td>
+                        <td class="title">E08</td>
+                        <td class="center">1文字前消去<br>→S1</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                    </tr>
+                    <tr>
+                        <td class="title">\r</td>
+                        <td class="title">E0D</td>
+                        <td class="center">コマンドライン編集終了<br>→S1</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                    </tr>
+                    <tr>
+                        <td class="title">\e</td>
+                        <td class="title">E1B</td>
+                        <td class="center">-<br>→S2</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                    </tr>
+                    <tr>
+                        <td class="title">C</td>
+                        <td class="title">E43</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                        <td class="center">CUF<br>→S1</td>
+                    </tr>
+                    <tr>
+                        <td class="title">D</td>
+                        <td class="title">E44</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                        <td class="center">CUB<br>→S2</td>
+                    </tr>
+                    <tr>
+                        <td class="title">[</td>
+                        <td class="title">E5B</td>
+                        <td class="center">-</td>
+                        <td class="center">-<br>→S3</td>
+                        <td clasS="center">-</td>
+                    </tr>
+                    <tr>
+                        <td class="title">\x7F</td>
+                        <td class="title">E7F</td>
+                        <td class="center">1文字消去<br>→S1</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                    </tr>
+                    <tr>
+                        <td class="title">他</td>
+                        <td class="title">E00</td>
+                        <td class="center">Insert<br>→S1</td>
+                        <td class="center">-<br>→S1</td>
+                        <td class="center">-<br>→S1</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1><a name="input">コマンド入力</a></h1>
+                <p>コマンドライン入力を繰り返し行う。シーケンスを以下に示す。</p>
+                <br>
+                <div class="center">
+                    シーケンス<br>
+                    <img src="input.png">
+                </div>
+                <br>
+                <br>
+                <h2><a name="input-prompt">プロンプト出力</a></h2>
+                <p>ターミナル管理モジュールの機能を用いてターミナルファイルにプロンプトを出力する。詳細は、<a href="../termmng/index.html">内部仕様(ターミナル管理モジュール)</a>の書込み、および、<a href="../../external/input/index.html">外部仕様(コマンド入力機能)</a>のプロンプト出力を参照のこと。</p>
+                <br>
+                <br>
+                <h2><a name="input-init">コマンドライン初期化</a></h2>
+                <p>コマンドライン編集処理にて使用するコマンドラインバッファ、コマンドラインバッファのカーソル位置、コマンドラインバッファの末尾文字位置を初期化する。</p>
+                <br>
+                <br>
+                <h2><a name="input-read">読込み</a></h2>
+                <p>ターミナル管理モジュールの機能を用いてターミナルファイルからデータ入力を待ち合わせる。詳細は、<a href="../termmng/index.html">内部仕様(ターミナル管理モジュール)</a>の読込み、および、<a href="../../external/input/index.html">外部仕様(コマンド入力機能)</a>のターミナルファイル読込みを参照のこと。</p>
+                <br>
+                <br>
+                <h2><a name="input-edit">コマンドライン編集</a></h2>
+                <p>入力データをコマンドライン編集し、コマンドライン編集終了の場合はメインモジュールに結果（入力/入力キャンセルしたか、入力したコマンド）を返す。詳細は、<a href="#edit">コマンドライン編集</a>を参照のこと。</p>
+                <br>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+            <div>
+                <h1><a name="edit">コマンドライン編集</a></h1>
+                <p>コマンドライン編集では、入力データを状態遷移によって制御する。シーケンスを以下に示す。</p>
+                <br>
+                <div class="center">
+                    シーケンス<br>
+                    <img src="edit.png">
+                </div>
+                <br>
+                <br>
+                <h2><a name="edit-exec">状態遷移実行</a></h2>
+                <p>コマンド入力で読み込んだ1byteデータをイベント番号として、状態遷移を実行する。状態遷移はMLibライブラリのMLibStateExec()を用いる。設定パラメータを以下に示す。</p>
+                <br>
+                <div class="center">MLibStateExec()設定パラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">引数名</td>
+                        <td class="title">設定値</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">*pHandle</td>
+                        <td class="center">(状態遷移ハンドルポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">event</td>
+                        <td class="center">(コマンド入力データ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">3</td>
+                        <td class="center">*pArg</td>
+                        <td class="center">(パラメータポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">4</td>
+                        <td class="center">*pPrevState</td>
+                        <td class="center">(遷移前状態格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">5</td>
+                        <td class="center">*pNextState</td>
+                        <td class="center">(遷移後状態格納先ポインタ)</td>
+                    </tr>
+                    <tr>
+                        <td class="title">6</td>
+                        <td class="center">*pErr</td>
+                        <td class="center">(エラー要因格納先ポインタ)</td>
+                    </tr>
+                </table>
+                <br>
+                <p>状態遷移実行時のタスクのパラメータには下記を含む。</p>
+                <br>
+                <div class="center">状態遷移タスクパラメータ</div>
+                <table>
+                    <tr>
+                        <td class="title">#</td>
+                        <td class="title">項目</td>
+                    </tr>
+                    <tr>
+                        <td class="title">1</td>
+                        <td class="center">コマンド入力データ</td>
+                    </tr>
+                    <tr>
+                        <td class="title">2</td>
+                        <td class="center">コマンドライン編集終了可否</td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-insert">文字挿入</a></h2>
+                <p>コマンドラインのカーソル位置に文字を挿入する。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">カーソル位置毎の文字挿入処理</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center" rowspan="2">バッファ<br>末尾文字<br>+1</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置に入力文字を書込む。</td>
+                        <td>入力文字を書込む。</td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td>バッファのカーソル位置を1文字進める。</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td class="center" rowspan="6">上記以外</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置からバッファ末尾文字までの文字を1文字後ろにずらす(コピーする)。</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td></td>
+                        <td>ターミナルのカーソル位置に文字を挿入するために、"\e[@"を書込む（空白の挿入）。</td>
+                    </tr>
+                    <tr>
+                        <td>(3)</td>
+                        <td>バッファのカーソル位置に文字を書込む。</td>
+                        <td>入力文字を書込む。</td>
+                    </tr>
+                    <tr>
+                        <td>(4)</td>
+                        <td>バッファのカーソル位置を1文字進める。</td>
+                        <td></td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-backspace">1文字前消去</a></h2>
+                <p>コマンドラインのカーソル位置の1つ前の文字を消去する。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">カーソル位置毎の1文字前消去</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ<br>先頭</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center" rowspan="2">バッファ<br>末尾文字<br>+1</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置を1文字戻す。</td>
+                        <td>ターミナルのカーソル位置を1文字戻すために、"\e[D"を書込む。</td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td>バッファのカーソル位置を1文字削除する。</td>
+                        <td>ターミナルのカーソル位置を1文字削除するために、"\e[X"を書込む。</td>
+                    <tr>
+                        <td class="center" rowspan="2">上記以外</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置を1文字戻す。</td>
+                        <td>ターミナルのカーソル位置を1文字戻すために、"\e[D"を書込む。</td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td>バッファのカーソル位置+1からバッファ末尾文字までの文字を1文字前にずらす(コピーする)。</td>
+                        <td>ターミナルのカーソル位置の文字を消去するために、"\e[P"を書込む。</td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-delete">1文字消去</a></h2>
+                <p>コマンドラインのカーソル位置の文字を消去する。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">カーソル位置毎の1文字消去</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ<br>末尾文字<br>+1</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center">上記以外</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置+1からバッファの末尾文字までの文字を1文字前にずらす(コピーする)。</td>
+                        <td>ターミナルのカーソル位置の文字を消去するために、"\e[P"を書込む。</td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-cuf">CUF</a></h2>
+                <p>コマンドラインのカーソル位置を1文字進める。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">カーソル位置毎の1文字進行</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ<br>末尾文字<br>+1</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center">上記以外</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置を1文字進める。</td>
+                        <td>ターミナルのカーソル位置を1文字進めるために、"\e[C"を書き込む。</td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-cub">CUB</a></h2>
+                <p>コマンドラインのカーソル位置を1文字戻す。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">カーソル位置毎の1文字後退</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ先頭</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center">上記以外</td>
+                        <td>(1)</td>
+                        <td>バッファのカーソル位置を1文字戻す。</td>
+                        <td>ターミナルのカーソル位置を1文字戻すために、"\e[D"を書き込む。</td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-end">コマンドライン編集終了</a></h2>
+                <p>ターミナルファイルに"\r\n"を書込み、コマンド入力に編集したコマンドを返す。
+                <br>
+            </div>
+            <div class="totop"><a href="#top">▲上へ</a></div>
+        </div>
+        <div id="footer">
+            <div id="copyright">
+                Copyright &copy 2020 Mochi. All rights reserved.
+            </div>
+        </div>
+    </body>
+</html>

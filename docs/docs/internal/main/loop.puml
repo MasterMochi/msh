@@ -1,0 +1,19 @@
+@startuml
+
+box "msh"
+    participant "メイン"               as main
+    participant "コマンドライン\n制御" as clctrl
+end box
+
+activate main
+ref over main: 初期化
+
+loop
+    main -> clctrl: コマンド入力
+    activate clctrl
+    ref over clctrl: コマンド入力
+    main <-- clctrl:
+    deactivate clctrl
+end loop
+
+@enduml
