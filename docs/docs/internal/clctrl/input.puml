@@ -9,12 +9,12 @@ end box
 activate main
 ref over main: 制御開始
 
-main -> clctrl: コマンドライン入力
+main -> clctrl: コマンドライン入力( コマンドラインバッファ )
 activate clctrl
 
 clctrl -> termmng: 書込み
 activate termmng
-rnote left #FFFFFF: プロンプト出力
+rnote left: プロンプト出力
 ref over termmng: 書込み
 clctrl <-- termmng:
 deactivate termmng
@@ -31,7 +31,12 @@ loop
     ref over clctrl: コマンドライン編集
 
     break コマンドライン編集終了
-        main <-- clctrl:コマンド
+        ||5||
+        alt コマンド文字列数 != 0
+            main <-- clctrl: 入力
+        else コマンド文字列数 == 0
+            main <-- clctrl: 入力キャンセル
+        end
     end break
 end loop
 deactivate clctrl

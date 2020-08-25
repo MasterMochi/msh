@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
 /* src/msh/Clctrl.c                                                           */
-/*                                                                 2020/08/24 */
+/*                                                                 2020/08/25 */
 /* Copyright (C) 2020 Mochi.                                                  */
 /*                                                                            */
 /******************************************************************************/
@@ -160,7 +160,14 @@ bool ClctrlInput( char   *pBuffer,
     /* コマンドライン編集終了判定 */
     } while ( end == false );
 
-    return true;    /* [TODO] */
+    /* コマンド文字列数判定 */
+    if ( gLength == 0 ) {
+        /* 無し */
+
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -229,7 +236,7 @@ static MLibStateNo_t DoBackspace( void *pArg )
 /**
  * @brief       コマンドライン編集終了
  * @details     コマンドラインバッファに終端文字を設定し、ターミナルファイルに
- *              '\r\n'を書込み、コマンドライン編集を終了する。
+ *              '\ee'を書込み、コマンドライン編集を終了する。
  *
  * @param[in]   *pArg パラメータ
  *
@@ -248,7 +255,7 @@ static MLibStateNo_t DoCR( void *pArg )
     pParam->pBuffer[ gLength ] = 0;
 
     /* ターミナルファイル改行 */
-    TermmngWrite( "\r\n", 2 );
+    TermmngWrite( "\eE", 2 );
 
     /* ターミナルファイル編集終了 */
     pParam->end = true;

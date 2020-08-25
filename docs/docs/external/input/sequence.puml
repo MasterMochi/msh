@@ -34,7 +34,7 @@ loop
             deactivate mvfs
         end opt
 
-        opt コマンド実行
+        break コマンド実行
             ||5||
             ref over msh: コマンド実行機能
         end opt
