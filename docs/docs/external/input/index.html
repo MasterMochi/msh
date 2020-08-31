@@ -205,6 +205,18 @@
                         <td>(編集処理内容による)</td>
                     </tr>
                     <tr>
+                        <td class="center">\e[1~</td>
+                        <td class="center">Home</td>
+                        <td>カーソル位置を先頭に移動する。</td>
+                        <td>\e[<i>Pn</i>D(<i>Pn</i>は編集内容による)</td>
+                    </tr>
+                    <tr>
+                        <td class="center">\e[4~</td>
+                        <td class="center">End</td>
+                        <td>カーソル位置を入力済み文字末尾+1に移動する。</td>
+                        <td>\e[<i>Pn</i>C(<i>Pn</i>は編集内容による)</td>
+                    </tr>
+                    <tr>
                         <td class="center">\e[C</td>
                         <td class="center">→</td>
                         <td>カーソル位置を1つ右に移動する。カーソル位置が文字列最後尾の場合は無視する。</td>

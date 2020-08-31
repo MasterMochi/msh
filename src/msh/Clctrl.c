@@ -1,7 +1,7 @@
 /******************************************************************************/
 /*                                                                            */
 /* src/msh/Clctrl.c                                                           */
-/*                                                                 2020/08/25 */
+/*                                                                 2020/08/31 */
 /* Copyright (C) 2020 Mochi.                                                  */
 /*                                                                            */
 /******************************************************************************/
@@ -12,6 +12,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 /* ライブラリヘッダ */
@@ -26,9 +27,14 @@
 /* 定義                                                                       */
 /******************************************************************************/
 /* 状態 */
-#define STATE_INIT   ( 1 )  /**< 初期状態       */
-#define STATE_ESCAPE ( 2 )  /**< エスケープ状態 */
-#define STATE_CSI    ( 3 )  /**< CSI状態        */
+#define STATE_INIT      ( 1 )   /**< 初期状態       */
+#define STATE_ESCAPE    ( 2 )   /**< エスケープ状態 */
+#define STATE_CSI       ( 3 )   /**< CSI状態        */
+#define STATE_CSI_PARAM ( 4 )   /**< CSI Param状態  */
+
+/* DECFNK */
+#define DECFNK_FIND   ( 1 )     /**< DECFNK Find key */
+#define DECFNK_SELECT ( 4 )     /**< DECFNK Select key */
 
 /** 状態遷移タスクパラメータ */
 typedef struct {
@@ -49,14 +55,21 @@ static MLibStateNo_t DoCR( void *pArg );
 static MLibStateNo_t DoCUB( void *pArg );
 /* CUF */
 static MLibStateNo_t DoCUF( void *pArg );
+/* DECFNK */
+static MLibStateNo_t DoDECFNK( void *pArg );
 /* 1文字消去 */
 static MLibStateNo_t DoDelete( void *pArg );
+/* End */
+static void DoEnd( void );
+/* Home */
+static void DoHome( void );
 /* 文字挿入 */
 static MLibStateNo_t DoInsert( void *pArg );
-
 /* コマンドライン編集 */
 static bool Edit( char *pBuffer,
                   char c         );
+/* 数字パラメータ設定 */
+static MLibStateNo_t SetParam( void *pArg );
 
 
 /******************************************************************************/
@@ -67,22 +80,25 @@ static MLibState_t gState;
 /** 状態遷移表 */
 static const MLibStateTransition_t gStt[] =
     {
-        /*-------------+--------+-------------+----------------------*/
-        /* 状態        | 入力   | タスク      | 遷移先状態           */
-        /*-------------+--------+-------------+----------------------*/
-        { STATE_INIT   , '\b'   , DoBackspace , { STATE_INIT   , 0 } },
-        { STATE_INIT   , '\r'   , DoCR        , { STATE_INIT   , 0 } },
-        { STATE_INIT   , '\e'   , NULL        , { STATE_ESCAPE , 0 } },
-        { STATE_INIT   , '\x7F' , DoDelete    , { STATE_INIT   , 0 } },
-        { STATE_INIT   , 0      , DoInsert    , { STATE_INIT   , 0 } },
-        /*-------------+--------+-------------+----------------------*/
-        { STATE_ESCAPE , '['    , NULL        , { STATE_CSI    , 0 } },
-        { STATE_ESCAPE , 0      , NULL        , { STATE_INIT   , 0 } },
-        /*-------------+--------+-------------+----------------------*/
-        { STATE_CSI    , 'C'    , DoCUF       , { STATE_INIT   , 0 } },
-        { STATE_CSI    , 'D'    , DoCUB       , { STATE_INIT   , 0 } },
-        { STATE_CSI    , 0      , NULL        , { STATE_INIT   , 0 } }
-        /*-------------+--------+-------------+----------------------*/
+        /*----------------+--------+-------------+----------------------------------------*/
+        /* 状態           | 入力   | タスク      | 遷移先状態                             */
+        /*----------------+--------+-------------+----------------------------------------*/
+        { STATE_INIT      , '\b'   , DoBackspace , { STATE_INIT                     , 0 } },
+        { STATE_INIT      , '\r'   , DoCR        , { STATE_INIT                     , 0 } },
+        { STATE_INIT      , '\e'   , NULL        , { STATE_ESCAPE                   , 0 } },
+        { STATE_INIT      , '\x7F' , DoDelete    , { STATE_INIT                     , 0 } },
+        { STATE_INIT      , 0      , DoInsert    , { STATE_INIT                     , 0 } },
+        /*----------------+--------+-------------+----------------------------------------*/
+        { STATE_ESCAPE    , '['    , NULL        , { STATE_CSI                      , 0 } },
+        { STATE_ESCAPE    , 0      , NULL        , { STATE_INIT                     , 0 } },
+        /*----------------+--------+-------------+----------------------------------------*/
+        { STATE_CSI       , 'C'    , DoCUF       , { STATE_INIT                     , 0 } },
+        { STATE_CSI       , 'D'    , DoCUB       , { STATE_INIT                     , 0 } },
+        { STATE_CSI       , 0      , SetParam    , { STATE_INIT   , STATE_CSI_PARAM , 0 } },
+        /*----------------+--------+-------------+----------------------------------------*/
+        { STATE_CSI_PARAM , '~'    , DoDECFNK    , { STATE_INIT                     , 0 } },
+        { STATE_CSI_PARAM , 0      , SetParam    , { STATE_INIT   , STATE_CSI_PARAM , 0 } }
+        /*----------------+--------+-------------+----------------------------------------*/
     };
 
 /** プロンプト */
@@ -92,6 +108,8 @@ static const char pgPrompt[] = "\e[1m\e[92m[msh]\e[97m$\e[0m ";
 static uint32_t gCursor;
 /** コマンド文字数 */
 static size_t   gLength;
+/** 数字パラメータ */
+static uint32_t gParam;
 
 
 /******************************************************************************/
@@ -141,8 +159,9 @@ bool ClctrlInput( char   *pBuffer,
     TermmngWrite( ( void * ) pgPrompt, strlen( pgPrompt ) );
 
     /* コマンドライン初期化 */
-    gCursor = 1;                /* バッファカーソル */
-    gLength = 0;                /* コマンド文字数   */
+    gCursor = 1;        /* バッファカーソル */
+    gLength = 0;        /* コマンド文字数   */
+    gParam  = 0;        /* 数字パラメータ   */
 
     do {
         /* 読込み */
@@ -232,6 +251,7 @@ static MLibStateNo_t DoBackspace( void *pArg )
     return STATE_INIT;
 }
 
+
 /******************************************************************************/
 /**
  * @brief       コマンドライン編集終了
@@ -263,6 +283,7 @@ static MLibStateNo_t DoCR( void *pArg )
     return STATE_INIT;
 }
 
+
 /******************************************************************************/
 /**
  * @brief       CUB
@@ -276,11 +297,6 @@ static MLibStateNo_t DoCR( void *pArg )
 /******************************************************************************/
 static MLibStateNo_t DoCUB( void *pArg )
 {
-    editParam_t *pParam;    /* パラメータ */
-
-    /* 初期化 */
-    pParam = ( editParam_t * ) pArg;
-
     /* カーソル位置判定 */
     if ( gCursor == 1 ) {
         /* バッファ先頭 */
@@ -300,6 +316,7 @@ static MLibStateNo_t DoCUB( void *pArg )
     return STATE_INIT;
 }
 
+
 /******************************************************************************/
 /**
  * @brief       CUF
@@ -313,11 +330,6 @@ static MLibStateNo_t DoCUB( void *pArg )
 /******************************************************************************/
 static MLibStateNo_t DoCUF( void *pArg )
 {
-    editParam_t *pParam;    /* パラメータ */
-
-    /* 初期化 */
-    pParam = ( editParam_t * ) pArg;
-
     /* カーソル位置判定 */
     if ( gCursor == ( gLength + 1 ) ) {
         /* バッファ末尾文字+1 */
@@ -336,6 +348,41 @@ static MLibStateNo_t DoCUF( void *pArg )
 
     return STATE_INIT;
 }
+
+
+/******************************************************************************/
+/**
+ * @brief       DECFNK
+ * @details     パラメータ毎のFunction Keyを処理する。
+ *
+ * @param[in]   *pArg パラメータ
+ *
+ * @return      遷移先状態を返す。
+ * @retval      STATE_INIT 初期状態
+ */
+/******************************************************************************/
+static MLibStateNo_t DoDECFNK( void *pArg )
+{
+    /* パラメータ判定 */
+    if ( gParam == DECFNK_FIND ) {
+        /* Find key */
+
+        /* Homeキー処理 */
+        DoHome();
+
+    } else if ( gParam == DECFNK_SELECT ) {
+        /* Select key */
+
+        /* Endキー処理 */
+        DoEnd();
+    }
+
+    /* 数字パラメータ初期化 */
+    gParam = 0;
+
+    return STATE_INIT;
+}
+
 
 /******************************************************************************/
 /**
@@ -379,6 +426,79 @@ static MLibStateNo_t DoDelete( void *pArg )
     return STATE_INIT;
 }
 
+
+/******************************************************************************/
+/**
+ * @brief       End
+ * @details     カーソルを末尾に移動する。
+ */
+/******************************************************************************/
+static void DoEnd( void )
+{
+    char buffer[ 32 ];  /* バッファ */
+
+    /* 初期化 */
+    memset( buffer, 0, sizeof ( buffer ) );
+
+    /* カーソル位置判定 */
+    if ( gCursor == ( gLength + 1 ) ) {
+        /* バッファ末尾 + 1 */
+
+        /* 処理無し */
+
+    } else {
+        /* 上記以外 */
+
+        /* カーソル移動文字列設定 */
+        snprintf( buffer, sizeof ( buffer ), "\e[%dC", gLength + 1 - gCursor );
+
+        /* カーソル設定 */
+        gCursor = gLength + 1;
+
+        /* ターミナル反映 */
+        TermmngWrite( buffer, strlen( buffer ) );
+    }
+
+    return;
+}
+
+
+/******************************************************************************/
+/**
+ * @brief       Home
+ * @details     カーソルを先頭に移動する。
+ */
+/******************************************************************************/
+static void DoHome( void )
+{
+    char buffer[ 32 ];  /* バッファ */
+
+    /* 初期化 */
+    memset( buffer, 0, sizeof ( buffer ) );
+
+    /* カーソル位置判定 */
+    if ( gCursor == 1 ) {
+        /* バッファ先頭 */
+
+        /* 処理無し */
+
+    } else {
+        /* 上記以外 */
+
+        /* カーソル移動文字列設定 */
+        snprintf( buffer, sizeof ( buffer ), "\e[%dD", gCursor - 1 );
+
+        /* カーソル設定 */
+        gCursor = 1;
+
+        /* ターミナル反映 */
+        TermmngWrite( buffer, strlen( buffer ) );
+    }
+
+    return;
+}
+
+
 /******************************************************************************/
 /**
  * @brief       文字挿入
@@ -419,11 +539,11 @@ static MLibStateNo_t DoInsert( void *pArg )
         for ( idx = gLength; idx > ( gCursor - 1 ); idx-- ) {
             pParam->pBuffer[ idx ] = pParam->pBuffer[ idx - 1 ];
         }
-        gLength += 1;
 
         /* 文字挿入 */
         pParam->pBuffer[ gCursor - 1 ]  = pParam->c;
         gCursor                        += 1;
+        gLength                        += 1;
 
         /* ターミナル反映 */
         buffer[ 3 ] = pParam->c;
@@ -466,6 +586,43 @@ static bool Edit( char *pBuffer,
                             NULL                    );
 
     return param.end;
+}
+
+
+/******************************************************************************/
+/**
+ * @brief       数字パラメータ設定
+ * @details     文字を値に変換し、数字パラメータを10倍にした数と足して数字パラ
+ *              メータを設定する。
+ *
+ * @param[in]   *pArg パラメータ
+ *
+ * @return      遷移先状態を返す。
+ * @retval      STATE_INIT      初期状態
+ * @retval      STATE_CSI_PARAM CSIparam状態
+ */
+/******************************************************************************/
+static MLibStateNo_t SetParam( void *pArg )
+{
+    editParam_t *pParam;    /* パラメータ */
+
+    /* 初期化 */
+    pParam = ( editParam_t * ) pArg;
+
+    /* 文字判定 */
+    if ( (  pParam->c < '0') || ( '9' < pParam->c ) ) {
+        /* 非数字 */
+
+        /* 数字パラメータ初期化 */
+        gParam = 0;
+
+        return STATE_INIT;
+    }
+
+    /* 数字パラメータ設定 */
+    gParam = gParam * 10 + ( pParam->c - '0' );
+
+    return STATE_CSI_PARAM;
 }
 
 

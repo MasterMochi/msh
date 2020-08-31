@@ -70,7 +70,9 @@
                         <li><a href="#edit-delete">1文字消去</a></li>
                         <li><a href="#edit-cuf">CUF</a></li>
                         <li><a href="#edit-cub">CUB</a></li>
-                        <li><a href="#edit-end">コマンドライン編集終了</a></li></ol></li>
+                        <li><a href="#edit-end">コマンドライン編集終了</a></li>
+                        <li><a href="#edit-param">数字パラメータ</a></li>
+                        <li><a href="#edit-decfnk">DECFNK</a></li></ol></li>
                 </ol>
             </div>
             <div class="totop"><a href="#top">▲上へ</a></div>
@@ -140,6 +142,7 @@
                         <td class="title">初期状態</td>
                         <td class="title">エスケープ</td>
                         <td class="title">CSI</td>
+                        <td class="title">CSI Param</td>
                     </tr>
                     <tr>
                         <td class="title">イベント</td>
@@ -147,6 +150,7 @@
                         <td class="title">S1</td>
                         <td class="title">S2</td>
                         <td class="title">S3</td>
+                        <td class="title">S4</td>
                     </tr>
                     <tr>
                         <td class="title">\b</td>
@@ -154,11 +158,13 @@
                         <td class="center">1文字前消去<br>→S1</td>
                         <td class="center">-</td>
                         <td class="center">-</td>
+                        <td class="center">-</td>
                     </tr>
                     <tr>
                         <td class="title">\r</td>
                         <td class="title">E0D</td>
-                        <td class="center">コマンドライン編集終了<br>→S1</td>
+                        <td class="center">コマンドライン<br>編集終了<br>→S1</td>
+                        <td class="center">-</td>
                         <td class="center">-</td>
                         <td class="center">-</td>
                     </tr>
@@ -168,6 +174,7 @@
                         <td class="center">-<br>→S2</td>
                         <td class="center">-</td>
                         <td class="center">-</td>
+                        <td class="center">-</td>
                     </tr>
                     <tr>
                         <td class="title">C</td>
@@ -175,6 +182,7 @@
                         <td class="center">-</td>
                         <td class="center">-</td>
                         <td class="center">CUF<br>→S1</td>
+                        <td class="center">-</td>
                     </tr>
                     <tr>
                         <td class="title">D</td>
@@ -182,6 +190,7 @@
                         <td class="center">-</td>
                         <td class="center">-</td>
                         <td class="center">CUB<br>→S2</td>
+                        <td class="center">-</td>
                     </tr>
                     <tr>
                         <td class="title">[</td>
@@ -189,6 +198,7 @@
                         <td class="center">-</td>
                         <td class="center">-<br>→S3</td>
                         <td clasS="center">-</td>
+                        <td class="center">-</td>
                     </tr>
                     <tr>
                         <td class="title">\x7F</td>
@@ -196,13 +206,25 @@
                         <td class="center">1文字消去<br>→S1</td>
                         <td class="center">-</td>
                         <td class="center">-</td>
+                        <td class="center">-</td>
                     </tr>
+                    <tr>
+                        <td class="title">~</td>
+                        <td class="title">E7E</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                        <td class="center">-</td>
+                        <td class="center">DECFNK<br>→S4</td>
                     <tr>
                         <td class="title">他</td>
                         <td class="title">E00</td>
                         <td class="center">Insert<br>→S1</td>
                         <td class="center">-<br>→S1</td>
-                        <td class="center">-<br>→S1</td>
+                        <td class="center">数字<br>パラメータ※<br>→S1/S4</td>
+                        <td class="center">数字<br>パラメータ※<br>→S1/S4</td>
+                    </tr>
+                    <tr>
+                        <td colspan="6">※ '0'～'9'の場合はS4。それ以外の文字の場合はS1へ</td>
                     </tr>
                 </table>
             </div>
@@ -469,6 +491,69 @@
                 <h2><a name="edit-end">コマンドライン編集終了</a></h2>
                 <p>ターミナルの改行をするためにターミナルファイルに"\eE"を書込み、コマンド入力に編集したコマンドを返す。
                 <br>
+                <br>
+                <h2><a name="edit-param">数字パラメータ</a></h2>
+                <p>文字が'0'～'9'の数字である場合は数値変換し、数字パラメータ(初期値0のバッファ)を10倍した数と足して数字パラメータに設定する。</p>
+                <br>
+                <br>
+                <h2><a name="edit-decfnk-1">DECFNK(数字パラメータ1)</a></h2>
+                <p>数字パラメータが1の場合、カーソルを先頭に移動する。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">DECFNK処理(数字パラメータ1)</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ先頭</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center" rowspan="2">上記以外</td>
+                        <td>(1)</td>
+                        <td></td>
+                        <td>ターミナルのカーソル位置をバッファのカーソル位置分戻すために、"\e[<i>Ps</i>D"を出力する。<i>Ps</i>には10進数でバッファのカーソル位置-1を設定する。</td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td>バッファのカーソル位置を先頭にする。</td>
+                        <td></td>
+                    </tr>
+                </table>
+                <br>
+                <br>
+                <h2><a name="edit-decfnk-4">DECFNK(数字パラメータ4)</a></h2>
+                <p>数字パラメータが4の場合、カーソルを末尾+1に移動する。カーソル位置によって下記の通り処理を行う。</p>
+                <br>
+                <div class="center">DECFNK処理(数字パラメータ1)</div>
+                <table>
+                    <tr>
+                        <td class="title">バッファ<br>カーソル位置</td>
+                        <td class="title">#</td>
+                        <td class="title" width="290">コマンドラインバッファ向け処理</td>
+                        <td class="title" width="290">ターミナルファイル向け処理</td>
+                    </tr>
+                    <tr>
+                        <td class="center">バッファ<br>末尾+1</td>
+                        <td>(1)</td>
+                        <td colspan="2">処理無し</td>
+                    </tr>
+                    <tr>
+                        <td class="center" rowspan="2">上記以外</td>
+                        <td>(1)</td>
+                        <td></td>
+                        <td>ターミナルのカーソル位置を入力文字末尾+1の位置に移動するために、"\e[<i>Ps</i>C"を出力する。<i>Ps</i>には、バッファの末尾文字+1からバッファのカーソル位置分引いた値を設定する。</td>
+                    </tr>
+                    <tr>
+                        <td>(2)</td>
+                        <td>ターミナルのカーソル位置をバッファの末尾文字+1に設定する。</td>
+                        <td></td>
+                    </tr>
+                </table>
             </div>
             <div class="totop"><a href="#top">▲上へ</a></div>
         </div>
